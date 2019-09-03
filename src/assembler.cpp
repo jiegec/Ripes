@@ -164,6 +164,7 @@ QByteArray Assembler::assembleOpImmInstruction(const QStringList& fields, int ro
             m_error |= !m_labelPosMap.contains(fields[3]);
             // calculate offset 31:12 bits - we -1 to get the row of the previois auipc op
             imm = m_labelPosMap[fields[3]] - (row - 1) * 4;
+            imm = (imm << 20) >> 20;
         }
         funct3 = 0b000;
     } else if (fields[0] == "slli") {
@@ -350,16 +351,11 @@ QByteArray Assembler::assembleAuipcInstruction(const QStringList& fields, int ro
     } else {
         // An offset value has been provided
         m_error |= !m_labelPosMap.contains(fields[2]);
-        // calculate offset 31:12 bits - we add +1 to offset the sign if the offset is negative
-        imm = m_labelPosMap[fields[2]];
-        if (imm < 0) {
-            imm >>= 12;
-            imm += 1;
-            imm <<= 12;
-        }
+        imm = m_labelPosMap[fields[2]] - row * 4;
+        imm = (imm & 0xfffff000) + ((imm & 0x00000800) << 1);
     }
 
-    return uintToByteArr(AUIPC | getRegisterNumber(fields[1]) << 7 | (imm & 0xfffff000));
+    return uintToByteArr(AUIPC | getRegisterNumber(fields[1]) << 7 | imm);
 }
 
 QByteArray Assembler::assembleJalrInstruction(const QStringList& fields, int row) {
