@@ -114,11 +114,14 @@ SyntaxHighlighter::SyntaxHighlighter(QTextDocument* parent) : QSyntaxHighlighter
     // Create match cases for instructions
     QStringList instructionPatterns;
     instructionPatterns << "\\bla\\b"
+                        << "\\blla\\b"
                         << "\\brd\\b"
                         << "\\blw\\b"
                         << "\\blh\\b"
+                        << "\\blhu\\b"
                         << "\\blui\\b"
                         << "\\blb\\b"
+                        << "\\blbu\\b"
                         << "\\bsb\\b"
                         << "\\bsh\\b"
                         << "\\bsw\\b"
@@ -340,6 +343,14 @@ void SyntaxHighlighter::createSyntaxRules() {
     types.clear();
     types << FieldType(Type::Register) << FieldType(Type::Offset, 0, 0, this);
     rule.instr = "la";
+    rule.fields = 3;
+    rule.inputs = types;
+    m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
+
+    // lla
+    types.clear();
+    types << FieldType(Type::Register) << FieldType(Type::Offset, 0, 0, this);
+    rule.instr = "lla";
     rule.fields = 3;
     rule.inputs = types;
     m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
@@ -596,7 +607,7 @@ namespace {
 // Shorthand macro for returning unknown instruction string, based on whether user tried to input an assembler directive
 #define UNKNOWN_OP(string)                             \
     if (string[0] == ".")                              \
-        return QString("Unknown assembler directive"); \
+        return QString(); \
     return QString("Unknown operation");
 }  // namespace
 

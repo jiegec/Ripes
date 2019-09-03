@@ -10,6 +10,7 @@ namespace {
 // Instruction groupings needed for various identification operations
 const QStringList pseudoOps = QStringList() << "nop"
                                             << "la"
+                                            << "lla"
                                             << "nop"
                                             << "li"
                                             << "mv"
@@ -415,7 +416,7 @@ void Assembler::assembleInstruction(const QStringList& fields, int row) {
 }
 
 void Assembler::unpackPseudoOp(const QStringList& fields, int& pos) {
-    if (fields.first() == "la") {
+    if (fields.first() == "la" || fields.first() == "lla") {
         m_instructionsMap[pos] = QStringList() << "auipc" << fields[1] << fields[2];
         m_instructionsMap[pos + 1] = QStringList() << "addi" << fields[1] << fields[1] << fields[2];
         m_lineLabelUsageMap[pos] = fields[2];
@@ -647,13 +648,15 @@ void Assembler::assembleAssemblerDirective(const QStringList& fields) {
         bool canConvert;
         assembleZeroArray(byteArray, static_cast<size_t>(getImmediate(fields[1], canConvert)));
         m_error |= !canConvert;
-    } else if (fields[0] == QString(".data")) {
+    } else if (fields[0] == QString(".data") || (fields[0] == QString(".section") && (fields[1].contains(".data") || fields[1].contains(".rodata")))) {
         // Following instructions will be assembled into the data segment
         m_inDataSegment = true;
         return;
-    } else if (fields[0] == QString(".text")) {
+    } else if (fields[0] == QString(".text") || (fields[0] == QString(".section") && fields[1].contains(".text"))) {
         // Following instructions will be assembled in to the text segment
         m_inDataSegment = false;
+        return;
+    } else {
         return;
     }
 
