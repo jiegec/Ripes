@@ -53,7 +53,6 @@ HEADERS += \
     memoryview.h \
     gotocombobox.h \
     addressdialog.h \
-    addressdialog.h \
     codeeditor.h \
     tabbar.h \
     graphics/shape.h \
