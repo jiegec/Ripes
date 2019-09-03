@@ -1,0 +1,5 @@
+*
+!linker.lds
+!Makefile
+!*.c
+!.gitignore
