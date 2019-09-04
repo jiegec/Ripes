@@ -416,7 +416,8 @@ void SyntaxHighlighter::createSyntaxRules() {
           << "bgt"
           << "bltu"
           << "bgeu"
-          << "bleu";
+          << "bleu"
+          << "bgtu";
     for (const auto& name : names) {
         rule.instr = name;
         rule.fields = 4;
@@ -613,7 +614,7 @@ void SyntaxHighlighter::createSyntaxRules() {
     rule.instr = ".zero";
     m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
 
-    // .string & .asciz
+    // .string & .asciz & ascii
     types.clear();
     types << FieldType(Type::String);
     rule.instr = ".string";
@@ -621,6 +622,16 @@ void SyntaxHighlighter::createSyntaxRules() {
     rule.inputs = types;
     m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
     rule.instr = ".asciz";
+    m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
+    rule.instr = ".ascii";
+    m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
+
+    // Emit align
+    types.clear();
+    types << FieldType(Type::Immediate, 0, 16);
+    rule.fields = 2;
+    rule.inputs = types;
+    rule.instr = ".align";
     m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
 }
 

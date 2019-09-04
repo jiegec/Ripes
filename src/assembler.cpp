@@ -632,7 +632,7 @@ void Assembler::unpackPseudoOp(const QStringList& fields, int& pos) {
 }
 
 void Assembler::assembleWords(const QStringList& fields, QByteArray& byteArray, size_t size) {
-    Q_ASSERT(size >= 1 && size <= 4);
+    m_error |= !(size >= 1 && size <= 4);
     bool ok;
     for (int i = 1; i < fields.size(); i++) {
         qlonglong val = getImmediate(fields[i], ok);
@@ -645,7 +645,7 @@ void Assembler::assembleWords(const QStringList& fields, QByteArray& byteArray, 
 
 // Allocates $size bytes in the static data segment
 void Assembler::assembleZeroArray(QByteArray& byteArray, size_t size) {
-    Q_ASSERT(size >= 1);
+    m_error |= !(size >= 1);
     for (int i = 0; i < size; i++) {
         byteArray.append(static_cast<char>(0x0));
     }
@@ -664,12 +664,29 @@ void Assembler::assembleAssemblerDirective(const QStringList& fields) {
         string.remove('\"');
         string.append('\0');
         byteArray = string.toUtf8();
+    } else if (fields[0] == QString(".ascii")) {
+            QString string;
+            // Merge input fields
+            for (int i = 1; i < fields.length(); i++) {
+                QString strarg = fields[i];
+                strarg.replace("\\n", "\n");
+                string += strarg;
+            }
+            string.remove('\"');
+            byteArray = string.toUtf8();
     } else if (DataAssemblerDirectives.contains(fields[0])) {
         assembleWords(fields, byteArray, DataAssemblerSizes.value(fields[0]));
     } else if (fields[0] == QString(".zero")) {
         bool canConvert;
         assembleZeroArray(byteArray, static_cast<size_t>(getImmediate(fields[1], canConvert)));
         m_error |= !canConvert;
+    } else if (fields[0] == QString(".align")) {
+        bool canConvert;
+        int imm = getImmediate(fields[1], canConvert);
+        m_error |= !canConvert || imm < 0 || imm > 16;
+        int align = 1;
+        for (int i=0;i<imm;i++) align *= 2;
+        while (m_dataSegment.length() % align != 0) m_dataSegment.append('\0');
     } else if (fields[0] == QString(".data") || (fields[0] == QString(".section") && (fields[1].contains(".data") || fields[1].contains(".rodata")))) {
         // Following instructions will be assembled into the data segment
         m_inDataSegment = true;
@@ -682,12 +699,12 @@ void Assembler::assembleAssemblerDirective(const QStringList& fields) {
         return;
     }
 
-    // Since we want aligned memory accesses, we pad the byte array to word-sized indexes (4-byte chunks)
-    if (byteArray.length() % 4 != 0) {
-        int padding = 4 - byteArray.length() % 4;
-        for (int i = 0; i < padding; i++)
-            byteArray.append('\0');
-    }
+//    // Since we want aligned memory accesses, we pad the byte array to word-sized indexes (4-byte chunks)
+//    if (byteArray.length() % 4 != 0) {
+//        int padding = 4 - byteArray.length() % 4;
+//        for (int i = 0; i < padding; i++)
+//            byteArray.append('\0');
+//    }
     m_dataSegment.append(byteArray);
 
     // Set hasData flag to trigger data segment insertion into simulator memory
