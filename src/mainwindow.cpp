@@ -128,6 +128,7 @@ void MainWindow::loadBinaryFile(QString filename) {
 }
 
 void MainWindow::loadAssemblyFile(QString fileName) {
+    m_ui->programfiletab->newProgram();
     // ... load file
     QFile file(fileName);
     m_ui->programfiletab->setInputMode(true);
