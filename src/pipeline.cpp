@@ -740,12 +740,14 @@ void Pipeline::propagateCombinational() {
 
     // For GUI - set invalidPC (branch taken indicator) if  PCSrc both PCSrc and s_IFID_write is asserted - in this
     // case, a new program counter value is starting to propagate, indicating an invalid ID branch
-    s_invalidPC = ((bool)s_branchTaken && (bool)s_IFID_write) || s_jal;
-    TAS(s_invalidPC, (uint32_t)r_PC_IFID > m_textSize, HazardReason::eof);
-    if (s_IDEX_reset) {
+    if (s_IFID_reset && (bool)s_IFID_write) {
+        r_invalidPC_IFID.overrideNext(HazardReason::BRANCHTAKEN);
+        if(s_IDEX_reset) r_invalidPC_IDEX.overrideNext(HazardReason::BRANCHTAKEN);
+    } else if (s_IDEX_reset) {
         // ID has a dependancy and requires a stall of EX. Set IDEX s_invalidPC register accordingly
         r_invalidPC_IDEX.overrideNext(HazardReason::STALL);
     }
+    TAS(s_invalidPC, (uint32_t)r_PC_IFID > m_textSize, HazardReason::eof);
 
     TAS(s_PCWrite, m_finishing, 0);
     TAS(s_IFID_reset, m_finishing, 1);
@@ -875,7 +877,8 @@ void Pipeline::setStagePCS() {
     m_pcs.WB = m_pcs.MEM.initialized ? PCVAL(r_PC_MEMWB, r_invalidPC_MEMWB) : m_pcs.MEM;
     m_pcs.MEM = m_pcs.EX.initialized ? PCVAL(r_PC_EXMEM, r_invalidPC_EXMEM) : m_pcs.EX;
     m_pcs.EX = m_pcs.ID.initialized ? PCVAL(r_PC_IDEX, r_invalidPC_IDEX) : m_pcs.ID;
-    m_pcs.ID = m_pcs.IF.initialized | m_finishing ? PCVAL(r_PC_IFID, r_invalidPC_IFID) : m_pcs.IF;
+    m_pcs.ID = m_pcs.IF.initialized | m_finishing ? PCVAL(r_PC_IFID, r_invalidPC_IFID) :
+                ((uint32_t)r_invalidPC_IDEX == HazardReason::STALL ? m_pcs.ID : m_pcs.IF);
     m_pcs.IF = PCVAL(r_PC_IF, m_finishing | m_finished);
 }
 
@@ -910,6 +913,7 @@ void Pipeline::reset() {
     m_textSize = 0;
     m_ready = false;
     m_abort = false;
+    m_pcs.reset();
 }
 
 void Pipeline::update() {
