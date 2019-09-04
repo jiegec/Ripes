@@ -1,6 +1,6 @@
 TARGET = RipesTest
 
-QT += testlib widgets
+QT += testlib widgets script
 
 CONFIG += c++14
 

@@ -23,6 +23,7 @@ private:
     void assembleZeroArray(QByteArray& byteArray, size_t size);
     void restart();
     int getImmediate(QString string, bool& canConvert);
+    int calcLabelImm(QString field);
     QByteArray uintToByteArr(uint32_t);
 
     QMap<QString, int> m_labelPosMap;  // Map storing unpacked label

@@ -1,6 +1,6 @@
 TARGET = RipesRunner
 
-QT += 
+QT += script
 CONFIG += console
 
 CONFIG += c++14

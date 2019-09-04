@@ -1,6 +1,6 @@
 TARGET = Ripes
 
-QT += widgets
+QT += widgets script
 
 CONFIG += c++14
 

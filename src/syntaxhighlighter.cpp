@@ -65,11 +65,24 @@ QString FieldType::validateField(const QString& field) const {
         case Type::Offset: {
             // Check if label is defined in highlighter
             Q_ASSERT(m_highlighter != nullptr);
-            if (m_highlighter->m_labelPosMap.contains(field)) {
-                return QString();
-            } else {
-                return QString("label \"%1\" is undefined").arg(field);
+            const QRegExp splitRegEx("([+()-]|\\s)+");
+            const QRegExp digitRegEx("\\d+");
+            QStringList labels = field.split(splitRegEx, QString::SkipEmptyParts);
+            int numLabels = 0;
+
+            for (QString label : labels) {
+                if (digitRegEx.exactMatch(label)) {
+                    continue;
+                }
+                numLabels++;
+                if (!m_highlighter->m_labelPosMap.contains(label)) {
+                    return QString("label \"%1\" is undefined").arg(label);
+                }
             }
+            if (numLabels > 1) {
+                return QString("illegal operands \"%1\"").arg(field);
+            }
+            return QString();
         }
         case Type::String: {
             if (field.length() > 1 && field[0] == "\"" && field[field.length() - 1] == "\"") {
@@ -281,6 +294,14 @@ void SyntaxHighlighter::createSyntaxRules() {
     types.clear();
     types << FieldType(Type::Offset, 0, 0, this);
     rule.instr = "call";
+    rule.fields = 2;
+    rule.inputs = types;
+    m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);
+
+    // tail
+    types.clear();
+    types << FieldType(Type::Offset, 0, 0, this);
+    rule.instr = "tail";
     rule.fields = 2;
     rule.inputs = types;
     m_syntaxRules.insert(rule.instr, QList<SyntaxRule>() << rule);

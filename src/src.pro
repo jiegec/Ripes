@@ -1,7 +1,7 @@
 TARGET = RipesLib
 TEMPLATE = lib
 
-QT += widgets svg
+QT += widgets svg script
 
 CONFIG += c++14 staticlib
 

@@ -5,6 +5,7 @@
 
 #include <QRegularExpression>
 #include <QTextBlock>
+#include <QtScript/QScriptEngine>
 
 namespace {
 // Instruction groupings needed for various identification operations
@@ -148,6 +149,29 @@ int Assembler::getImmediate(QString string, bool& canConvert) {
     return sign * immediate;
 }
 
+int Assembler::calcLabelImm(QString field) {
+    const QRegExp splitRegEx = QRegExp("([+()-]|\\s)+");
+    const QRegExp digitRegEx("\\d+");
+    int numLabels = 0;
+
+    QStringList labels = field.split(splitRegEx, QString::SkipEmptyParts);
+    for (QString label : labels) {
+        if (digitRegEx.exactMatch(label)) {
+            continue;
+        }
+        numLabels++;
+        m_error |= !m_labelPosMap.contains(label);
+        field.replace(label, QString::number(m_labelPosMap[label]));
+    }
+    QScriptEngine expression;
+    if (numLabels <= 1 && expression.canEvaluate(field)) {
+        return expression.evaluate(field).toNumber();
+    } else {
+        m_error |= true;
+        return 0;
+    }
+}
+
 QByteArray Assembler::assembleOpImmInstruction(const QStringList& fields, int row) {
     Q_UNUSED(row);
     uint32_t funct3 = 0;
@@ -160,10 +184,8 @@ QByteArray Assembler::assembleOpImmInstruction(const QStringList& fields, int ro
         if (canConvert) {
             // An immediate value as been provided
         } else {
-            // An offset value has been provided ( unfolded pseudo-op)
-            m_error |= !m_labelPosMap.contains(fields[3]);
             // calculate offset 31:12 bits - we -1 to get the row of the previois auipc op
-            imm = m_labelPosMap[fields[3]] - (row - 1) * 4;
+            imm = calcLabelImm(fields[3]) - (row - 1) * 4;
         }
         funct3 = 0b000;
     } else if (fields[0] == "slli") {
@@ -274,10 +296,8 @@ QByteArray Assembler::assembleStoreInstruction(const QStringList& fields, int ro
     if (canConvert) {
         // An offset value has been provided ( unfolded pseudo-op)
     } else {
-        // A label was provided
-        m_error |= !m_labelPosMap.contains(fields[2]);
         // calculate offset 31:12 bits - we -1 to get the row of the previois auipc op
-        imm = m_labelPosMap[fields[2]] - (row - 1) * 4;
+        imm = calcLabelImm(fields[2]) - (row - 1) * 4;
     }
 
     return uintToByteArr(STORE | getRegisterNumber(fields[3]) << 15 | getRegisterNumber(fields[1]) << 20 |
@@ -305,9 +325,8 @@ QByteArray Assembler::assembleLoadInstruction(const QStringList& fields, int row
     if (canConvert) {
         // An offset value has been provided ( unfolded pseudo-op)
     } else {
-        m_error |= !m_labelPosMap.contains(fields[2]);
         // calculate offset 31:12 bits - we -1 to get the row of the previois auipc op
-        imm = m_labelPosMap[fields[2]] - (row - 1) * 4;
+        imm = calcLabelImm(fields[2]) - (row - 1) * 4;
     }
 
     return uintToByteArr(LOAD | funct3 << 12 | getRegisterNumber(fields[1]) << 7 | imm << 20 |
@@ -348,9 +367,7 @@ QByteArray Assembler::assembleAuipcInstruction(const QStringList& fields, int ro
     if (canConvert) {
         // An immediate value as been provided
     } else {
-        // An offset value has been provided
-        m_error |= !m_labelPosMap.contains(fields[2]);
-        imm = m_labelPosMap[fields[2]] - row * 4;
+        imm = calcLabelImm(fields[2]) - row * 4;
         imm = (imm & 0xfffff000) + ((imm & 0x00000800) << 1);
     }
 
