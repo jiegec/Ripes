@@ -335,8 +335,13 @@ QByteArray Assembler::assembleLoadInstruction(const QStringList& fields, int row
 
 QByteArray Assembler::assembleBranchInstruction(const QStringList& fields, int row) {
     // calculate offset
-    Q_ASSERT(m_labelPosMap.contains(fields[3]));
-    int offset = m_labelPosMap[fields[3]];
+    bool canConvert;
+    int offset = getImmediate(fields[3], canConvert);
+    if (!canConvert) {
+        // An offset value has been provided ( unfolded pseudo-op)
+        m_error |= !m_labelPosMap.contains(fields[3]);
+        offset = m_labelPosMap[fields[3]];
+    }
     offset = offset - row * 4;  // byte-wize addressing
     uint32_t funct3 = 0;
     if (fields[0] == "beq") {
@@ -413,8 +418,13 @@ void Assembler::assembleInstruction(const QStringList& fields, int row) {
     } else if (instruction == "auipc") {
         m_textSegment.append(assembleAuipcInstruction(fields, row));
     } else if (instruction == "jal") {
-        Q_ASSERT(m_labelPosMap.contains(fields[2]));
-        int32_t imm = m_labelPosMap[fields[2]];
+        bool canConvert;
+        int imm = getImmediate(fields[2], canConvert);
+        if (!canConvert) {
+            // An offset value has been provided ( unfolded pseudo-op)
+            m_error |= !m_labelPosMap.contains(fields[2]);
+            imm = m_labelPosMap[fields[2]];
+        }
         imm = imm - row * 4;
         imm = (imm & 0x7fe) << 20 | (imm & 0x800) << 9 | (imm & 0xff000) | (imm & 0x100000) << 11;
         m_textSegment.append(uintToByteArr(JAL | getRegisterNumber(fields[1]) << 7 | imm));
