@@ -849,7 +849,7 @@ int Pipeline::step() {
     if (m_finishing) {
         m_finishingCnt++;
     }
-    if ((m_pcs.WB.pc > m_textSize) || (m_finishingCnt > 4) || m_ecallArg == ECALL::exit) {
+    if ((m_pcs.WB.pc > m_textSize && m_pcs.MEM.pc > m_textSize && m_pcs.EX.pc > m_textSize && m_pcs.IF.pc > m_textSize && m_pcs.ID.pc > m_textSize) || (m_finishingCnt > 4) || m_ecallArg == ECALL::exit) {
         m_finished = true;
         doFinishCleanup();
         return 1;
@@ -872,10 +872,10 @@ void Pipeline::setStagePCS() {
     // the PCS are set in reverse order
     m_pcsPre = m_pcs;
     // Propagate "valid" in terms
-    m_pcs.WB = m_pcs.MEM.initialized ? PCVAL(r_PC_MEMWB, r_invalidPC_MEMWB) : m_pcs.WB;
-    m_pcs.MEM = m_pcs.EX.initialized ? PCVAL(r_PC_EXMEM, r_invalidPC_EXMEM) : m_pcs.MEM;
-    m_pcs.EX = m_pcs.ID.initialized ? PCVAL(r_PC_IDEX, r_invalidPC_IDEX) : m_pcs.EX;
-    m_pcs.ID = m_pcs.IF.initialized | m_finishing ? PCVAL(r_PC_IFID, r_invalidPC_IFID) : m_pcs.ID;
+    m_pcs.WB = m_pcs.MEM.initialized ? PCVAL(r_PC_MEMWB, r_invalidPC_MEMWB) : m_pcs.MEM;
+    m_pcs.MEM = m_pcs.EX.initialized ? PCVAL(r_PC_EXMEM, r_invalidPC_EXMEM) : m_pcs.EX;
+    m_pcs.EX = m_pcs.ID.initialized ? PCVAL(r_PC_IDEX, r_invalidPC_IDEX) : m_pcs.ID;
+    m_pcs.ID = m_pcs.IF.initialized | m_finishing ? PCVAL(r_PC_IFID, r_invalidPC_IFID) : m_pcs.IF;
     m_pcs.IF = PCVAL(r_PC_IF, m_finishing | m_finished);
 }
 

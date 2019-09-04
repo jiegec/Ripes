@@ -102,13 +102,13 @@ QVariant InstructionModel::data(const QModelIndex& index, int role) const {
                     }
                     retStrings << "WB";
                 }
+                VALIDATE(IF);
+                VALIDATE(ID);
+                VALIDATE(EX);
+                VALIDATE(MEM);
+                VALIDATE(WB);
                 if (retStrings.isEmpty()) {
                     // Clear invalid PC values for each stage (used when resetting the program)
-                    VALIDATE(IF);
-                    VALIDATE(ID);
-                    VALIDATE(EX);
-                    VALIDATE(MEM);
-                    VALIDATE(WB);
                     return QVariant();
                 } else {
                     // Join strings by "/"
