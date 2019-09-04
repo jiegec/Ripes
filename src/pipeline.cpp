@@ -84,7 +84,7 @@ Pipeline::Pipeline() {
         .addToBank(&r_MemRead_IDEX)
         .addToBank(&r_memToReg_IDEX)
         .addToBank(&r_jal_IDEX)
-        .addToBank(&r_jal_IDEX);
+        .addToBank(&r_jalr_IDEX);
     bank_IDEX.setReset(&s_IDEX_reset);
     bank_IDEX.setRegisterControls();
 
