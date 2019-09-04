@@ -164,7 +164,6 @@ QByteArray Assembler::assembleOpImmInstruction(const QStringList& fields, int ro
             m_error |= !m_labelPosMap.contains(fields[3]);
             // calculate offset 31:12 bits - we -1 to get the row of the previois auipc op
             imm = m_labelPosMap[fields[3]] - (row - 1) * 4;
-            imm = (imm << 20) >> 20;
         }
         funct3 = 0b000;
     } else if (fields[0] == "slli") {
@@ -308,7 +307,7 @@ QByteArray Assembler::assembleLoadInstruction(const QStringList& fields, int row
     } else {
         m_error |= !m_labelPosMap.contains(fields[2]);
         // calculate offset 31:12 bits - we -1 to get the row of the previois auipc op
-        imm = (m_labelPosMap[fields[2]] & 0xfff) - (row - 1) * 4;
+        imm = m_labelPosMap[fields[2]] - (row - 1) * 4;
     }
 
     return uintToByteArr(LOAD | funct3 << 12 | getRegisterNumber(fields[1]) << 7 | imm << 20 |
@@ -593,7 +592,7 @@ void Assembler::unpackPseudoOp(const QStringList& fields, int& pos) {
             // Pseudo op store
             m_instructionsMap[pos] = QStringList() << "auipc" << fields[3] << fields[2];
             m_instructionsMap[pos + 1] = QStringList()
-                                         << fields.first() << fields[1] << QString::number(imm) << fields[3];
+                                         << fields.first() << fields[1] << fields[2] << fields[3];
             m_lineLabelUsageMap[pos] = fields[1];
             m_lineLabelUsageMap[pos + 1] = fields[1];
             pos += 2;
