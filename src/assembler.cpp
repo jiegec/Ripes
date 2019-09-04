@@ -121,7 +121,7 @@ uint32_t Assembler::getRegisterNumber(const QString& reg) {
         regRes.remove('x');
         return regRes.toInt(nullptr, 10);
     } else {
-        Q_ASSERT(ABInames.contains(reg));
+        m_error |= !ABInames.contains(reg);
         return ABInames[reg];
     }
 }
@@ -729,6 +729,7 @@ void Assembler::unpackOp(const QStringList& _fields, int& pos) {
         }
     }
 
+    fields[0] = fields[0].toLower();
     // Unpack operations
     if (pseudoOps.contains(fields[0])) {
         // A pseudo-operation is detected - unpack using unpackPseudoOp
