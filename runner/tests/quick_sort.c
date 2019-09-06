@@ -177,6 +177,7 @@ void shell6(void) {
         for (j = 0; j < N; j++) {
             if (result[j] != a_ref[j]) {
                 err += 1;
+                printf("iteration %d errored\n", i);
                 break;
             }
         }
