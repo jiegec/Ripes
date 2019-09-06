@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
                     printf("Data: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
                     auto memPtr = Pipeline::getPipeline()->getDataMemoryPtr();
                     for (ptrdiff_t offset = 0; offset < phdr->p_filesz;offset ++) {
-                        memPtr->insert({phdr->p_paddr + offset, src[offset]});
+                        memPtr->insert({phdr->p_paddr + offset + DATASTART, src[offset]});
                     }
                 }
                 ++phdr;

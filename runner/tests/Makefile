@@ -5,7 +5,7 @@ MAKEFLAGS += --no-builtin-rules
 all: $(patsubst %.c,%,$(wildcard *.c))
 
 %.o: %.c
-	$(PREFIX)gcc $^ -o $@ -march=rv32g -mabi=ilp32 -fPIC -ffreestanding -nostdlib
+	$(PREFIX)gcc $^ -o $@ -march=rv32im -mabi=ilp32 -fPIE -ffreestanding -nostdlib
 
 %: %.o
 	$(PREFIX)ld $^ -T linker.lds -o $@ -melf32lriscv
