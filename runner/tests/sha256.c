@@ -1,3 +1,5 @@
+#include "lib.h"
+
 extern int main();
 __attribute__((section(".init"))) void _start() {
     main();
@@ -193,44 +195,6 @@ const char sha_string[] =
     "fsunscreenhavebeenprovedbyscientistswhereastherestofmyadvicehasnobasismore"
     "reliablethanmyownmeanderingexperienceIwilldispense";
 
-void print_int(int x)
-{
-    asm("mv a1, %0\n\t"
-        "li a0, 1\n\t"
-        "ecall"
-        :
-        : "r"(x)
-        : "a0", "a1");
-}
-
-void print_char(char x)
-{
-    asm("mv a1, %0\n\t"
-        "li a0, 2\n\t"
-        "ecall"
-        :
-        : "r"(x)
-        : "a0", "a1");
-}
-
-void print_str(const char *x)
-{
-    asm("mv a1, %0\n\t"
-        "li a0, 4\n\t"
-        "ecall"
-        :
-        : "r"(x)
-        : "a0", "a1");
-}
-
-void end()
-{
-    asm("li a0, 10\n\t"
-        "ecall"
-        :
-        :
-        : "a0");
-}
 
 int main() {
 
@@ -249,16 +213,11 @@ int main() {
 
     for (int i = 0; i < 8; ++i) {
         if (hash[i] != ans[i]) {
-            print_str("Err! ");
-            print_int(hash[i]);
-            print_char(' ');
-            print_int(ans[i]);
-            print_char('\n');
-            // TODO: print number here
+            printf("Err! got %d instead of %d\n", hash[i], ans[i]);
         }
     }
-    print_str("Ok!");
-    end();
+    printf("Ok!\n");
+    exit();
 
     return 0;
 }

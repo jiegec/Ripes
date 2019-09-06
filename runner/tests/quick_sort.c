@@ -1,30 +1,4 @@
-void printf(char* arg, ...) {
-    asm volatile(
-        "li a0, 4\n"
-        "mv a1, %0\n"
-        "ecall"
-        :
-        : "r"(arg)
-        : "a0", "a1");
-}
-
-void put_int(int arg) {
-	asm volatile("li a0, 1\n"
-		"mv a1, %0\n"
-		"ecall"
-		:
-		:"r"(arg)
-		:"a0", "a1");
-}
-
-void exit() {
-    asm volatile(
-        "li a0, 10\n"
-        "ecall"
-        :
-        :
-        : "a0");
-}
+#include "lib.h"
 
 int partition(int* a, int p, int q) {
     int pivot = a[p];
@@ -206,9 +180,7 @@ void shell6(void) {
     err = 0;
     printf("quick sort test begin.\n");
     for (i = 0; i < 100; i++) {
-	printf("iteration ");
-	put_int(i);
-	printf("\n");
+        printf("iteration %d begin\n");
         result = quick_sort(a, N);
         for (j = 0; j < N; j++) {
             if (result[j] != a_ref[j]) {
@@ -216,6 +188,7 @@ void shell6(void) {
                 break;
             }
         }
+        printf("iteration %d end\n");
     }
     total_count = stop_count - start_count;
     total_count_my = stop_count_my - start_count_my;
