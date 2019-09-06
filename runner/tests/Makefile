@@ -6,7 +6,7 @@ MAKEFLAGS += --no-builtin-rules
 all: $(patsubst %.c,%,$(wildcard *.c))
 
 clean:
-	rm -rf $(patsubst %.c,%,$(wildcard *.c))
+	rm -rf $(patsubst %.c,%,$(wildcard *.c)) $(patsubst %.c,%.o,$(wildcard *.c))
 
 %.o: %.c
 	$(PREFIX)gcc $^ -o $@ -march=rv32im -mabi=ilp32 -fPIE -ffreestanding -nostdlib
@@ -14,3 +14,4 @@ clean:
 %: %.o
 	$(PREFIX)ld $^ -T linker.lds -o $@ -melf32lriscv
 
+.SECONDARY:
