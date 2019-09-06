@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
             elf32_phdr* phdr = (elf32_phdr*)(((ptrdiff_t)ehdr) + ehdr->e_phoff);
             elf32_phdr* last_phdr = (elf32_phdr*)(((ptrdiff_t)phdr) + (ehdr->e_phentsize * ehdr->e_phnum));
-            while(phdr < last_phdr) {
+            for(;phdr < last_phdr;++phdr) {
                 char* src = data.data() + phdr->p_offset;
                 if (phdr->p_type != 1) {
                     // PT_LOAD
@@ -60,10 +60,9 @@ int main(int argc, char** argv) {
                     printf("Data: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
                     auto memPtr = Pipeline::getPipeline()->getDataMemoryPtr();
                     for (ptrdiff_t offset = 0; offset < phdr->p_filesz;offset ++) {
-                        memPtr->insert({phdr->p_paddr + offset + DATASTART, src[offset]});
+                        memPtr->insert({phdr->p_paddr + offset, src[offset]});
                     }
                 }
-                ++phdr;
             }
             file.close();
         }

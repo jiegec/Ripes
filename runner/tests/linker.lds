@@ -4,7 +4,9 @@ SECTIONS {
 		*(.init)
 		*(.text)
 	}
+	. = 0x10000000;
 	.data : {
 		*(.data)
+		*(.rodata*)
 	}
 }

@@ -166,21 +166,13 @@ static int a_ref[N] = {
     32616, 32617, 32659, 32663, 32664, 32670, 32726, 32754};
 
 void shell6(void) {
-    unsigned long start_count = 0;
-    unsigned long stop_count = 0;
-    unsigned long total_count = 0;
-
-    unsigned long start_count_my = 0;
-    unsigned long stop_count_my = 0;
-    unsigned long total_count_my = 0;
-
     int i, j, err;
     int* result;
 
     err = 0;
     printf("quick sort test begin.\n");
-    for (i = 0; i < 100; i++) {
-        printf("iteration %d begin\n");
+    for (i = 0; i < 10; i++) {
+        printf("iteration %d begin\n", i);
         result = quick_sort(a, N);
         for (j = 0; j < N; j++) {
             if (result[j] != a_ref[j]) {
@@ -188,18 +180,14 @@ void shell6(void) {
                 break;
             }
         }
-        printf("iteration %d end\n");
+        printf("iteration %d end\n", i);
     }
-    total_count = stop_count - start_count;
-    total_count_my = stop_count_my - start_count_my;
 
     if (err == 0) {
         printf("quick sort PASS!\n");
     } else {
         printf("quick sort ERROR!!!\n");
     }
-    printf("quick sort: Total Count(SoC count) = 0x%x\n", total_count);
-    printf("quick sort: Total Count(CPU count) = 0x%x\n", total_count_my);
 
     return;
 }
