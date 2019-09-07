@@ -28,13 +28,14 @@ static void putstring(char* arg) {
         : "a0", "a1");
 }
 
-static void exit() {
+static void exit(int res) {
     asm volatile(
         "li a0, 10\n"
+        "mv a1, %0\n"
         "ecall"
         :
-        :
-        : "a0");
+        : "r"(res)
+        : "a0", "a1");
 }
 
 static int printbase(long v, int w, int base, int sign) {
@@ -138,4 +139,10 @@ static int printf(const char* fmt, ...) {
         }
     }
     return 0;
+}
+
+int main();
+__attribute__((section(".init"))) void _start() {
+    exit(main());
+	return;
 }

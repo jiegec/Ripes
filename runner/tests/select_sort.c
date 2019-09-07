@@ -55,7 +55,7 @@ static int a_ref[N] = {
     28701, 28773, 28865, 29043, 29089, 29115, 29158, 29276, 29484, 29542, 29598, 29907, 30240, 30279, 30780, 30914,
     31201, 31222, 31302, 31374, 31477, 32551, 32659, 32754};
 
-void shell7(void) {
+int main(void) {
     int i, j, err;
     int* result;
 
@@ -79,11 +79,5 @@ void shell7(void) {
         printf("select sort ERROR!!!\n");
     }
 
-    return;
-}
-
-__attribute__((section(".init"))) void _start() {
-    shell7();
-    exit();
-    return;
+    return err;
 }

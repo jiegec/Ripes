@@ -1,7 +1,5 @@
-extern void main();
-__attribute__((section(".init"))) void _start() {
-    main();
-}
+#include "lib.h"
+
 #ifdef NOTDEFINED /* To compile and run this file, say "sh dry.c" */
 	case $0 in
 	*.c) ;;
@@ -569,7 +567,7 @@ Enumeration     Func_1 ();
 /* end of variables for time measurement */
 
 
-void main()
+int main()
 /*****/
 
   /* main program, corresponds to procedures        */
@@ -738,10 +736,8 @@ void main()
   print_str ("\n        should be:   DHRYSTONE PROGRAM, 2'ND STRING\n");
   print_str ("\n");
 
-  end();
-
+  return 0;
 }
-
 
 Proc_1 (Ptr_Val_Par)
 /******************/

@@ -165,7 +165,7 @@ static int a_ref[N] = {
     31936, 31946, 32083, 32101, 32162, 32209, 32211, 32283, 32295, 32400, 32416, 32438, 32454, 32457, 32479, 32551,
     32616, 32617, 32659, 32663, 32664, 32670, 32726, 32754};
 
-void shell6(void) {
+int main(void) {
     int i, j, err;
     int* result;
 
@@ -190,11 +190,5 @@ void shell6(void) {
         printf("quick sort ERROR!!!\n");
     }
 
-    return;
-}
-
-__attribute__((section(".init"))) void _start() {
-    shell6();
-    exit();
-    return;
+    return err;
 }
