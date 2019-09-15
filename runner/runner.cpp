@@ -74,6 +74,8 @@ int main(int argc, char** argv) {
     Pipeline* pipeline = Pipeline::getPipeline();
     std::vector<uint32_t> oldRegs(32, 0);
     pipeline->restart();
+    int load_cycles = 0;
+    bool first_load = true;
     while (!pipeline->isFinished()) {
         pipeline->step();
         std::vector<uint32_t> &current = *pipeline->getRegPtr();
@@ -103,6 +105,11 @@ int main(int argc, char** argv) {
                 break;
             }
             case Pipeline::ECALL::load_data: {
+                if (first_load) {
+                    load_cycles = pipeline->getCycleCount();
+                    first_load = false;
+                }
+
                 if (argc != 4) {
                     printf("Data file not specified, load_data is a no-op\n");
                     break;
@@ -114,7 +121,8 @@ int main(int argc, char** argv) {
                         auto length = arr.length();
                         QDataStream in(&arr, QIODevice::ReadOnly);
                         char buffer[4];
-                        uint32_t byteIndex = 0x80000000;
+                        uint32_t byteIndex = static_cast<uint32_t>(ecall_val.second);
+                        printf("Load data to %08x\n", byteIndex);
                         for (int i = 0; i < length; i += 4) {
                             in.readRawData(buffer, 4);
                             for (char & j : buffer) {
@@ -136,6 +144,9 @@ int main(int argc, char** argv) {
     }
 
     printf("\n\nCycle count: %d\n", pipeline->getCycleCount());
+    if (!first_load) {
+        printf("Cycle count after data loaded: %d\n", pipeline->getCycleCount() - load_cycles);
+    }
     printf("Instructions issued: %d\n", pipeline->getInstructionsExecuted());
 
     return 0;

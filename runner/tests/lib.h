@@ -18,13 +18,14 @@ static void putchar(char arg) {
         : "a0", "a1");
 }
 
-static void loaddata() {
+static void loaddata(void *addr) {
     asm volatile(
         "li a0, 3\n"
+        "mv a1, %0\n"
         "ecall"
         :
-        :
-        : "a0", "memory");
+        : "r"(addr)
+        : "a0", "a1", "memory");
 }
 
 static void putstring(char* arg) {
