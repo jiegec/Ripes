@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
     Pipeline* pipeline = Pipeline::getPipeline();
     std::vector<uint32_t> oldRegs(32, 0);
     pipeline->restart();
+    pipeline->disableMemoryAccesses();
     int load_cycles = 0;
     bool first_load = true;
     while (!pipeline->isFinished()) {

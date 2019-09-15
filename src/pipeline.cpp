@@ -645,8 +645,10 @@ void Pipeline::propagateCombinational() {
     mux_alures_PC4_MEM.update();
     if ((uint32_t)r_MemRead_EXMEM != 0) {
         // Store read access for use in GUI
-        RVAccess acc{(uint32_t)r_PC_EXMEM, RW::Read, (uint32_t)r_alures_EXMEM, m_cycleCount};
-        m_MemoryAccesses.insert(m_MemoryAccesses.begin(), acc);
+        if (m_EnableMemoruAccesses) {
+            RVAccess acc{(uint32_t)r_PC_EXMEM, RW::Read, (uint32_t)r_alures_EXMEM, m_cycleCount};
+            m_MemoryAccesses.insert(m_MemoryAccesses.begin(), acc);
+        }
         switch ((uint32_t)r_MemRead_EXMEM) {
             case LB: {
                 readData_MEM = signextend<int32_t, 8>(m_runtimeMemory.read((uint32_t)r_alures_EXMEM) & 0xff);
@@ -813,8 +815,10 @@ int Pipeline::step() {
         // Store write access for use in GUI. Cycle count is current cycle count - 1 since the operation was in the MEM
         // stage in the previous cycle (which we should convey to the user), but the memory gets stored on the rising
         // edge of the clock (this cycle).
-        RVAccess acc{(uint32_t)r_PC_EXMEM, RW::Write, (uint32_t)r_alures_EXMEM, m_cycleCount - 1};
-        m_MemoryAccesses.insert(m_MemoryAccesses.begin(), acc);
+        if (m_EnableMemoruAccesses) {
+            RVAccess acc{(uint32_t)r_PC_EXMEM, RW::Write, (uint32_t)r_alures_EXMEM, m_cycleCount - 1};
+            m_MemoryAccesses.insert(m_MemoryAccesses.begin(), acc);
+        }
         switch ((uint32_t)r_MemWrite_EXMEM) {
             case SB: {
                 m_runtimeMemory.write((uint32_t)r_alures_EXMEM, (uint32_t)r_writeData_EXMEM, 1);
@@ -941,6 +945,7 @@ void Pipeline::restart() {
     m_ecallArg = ECALL::none;
     m_ecallVal = 0;
     m_pcsCycles.clear();
+    m_EnableMemoruAccesses = true;
     m_MemoryAccesses.clear();
 
     // Reset all registers to 0 and propagate signals through combinational logic
