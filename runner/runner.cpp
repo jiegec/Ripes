@@ -13,8 +13,8 @@ using namespace std;
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
 
-    if (argc != 3) {
-        printf("Usage: runner [--asm|--elf] file\n");
+    if (argc != 3 && argc != 4) {
+        printf("Usage: runner [--asm|--elf] file [input_file]\n");
         return 1;
     }
 
@@ -100,6 +100,33 @@ int main(int argc, char** argv) {
             }
             case Pipeline::ECALL::print_char: {
                 printf("%c", ecall_val.second);
+                break;
+            }
+            case Pipeline::ECALL::load_data: {
+                if (argc != 4) {
+                    printf("Data file not specified, load_data is a no-op\n");
+                    break;
+                } else {
+                    QFile file(argv[3]);
+                    if (file.open(QIODevice::ReadOnly)) {
+                        QByteArray arr = file.readAll();
+                        auto memPtr = pipeline->getRuntimeMemoryPtr();
+                        auto length = arr.length();
+                        QDataStream in(&arr, QIODevice::ReadOnly);
+                        char buffer[4];
+                        uint32_t byteIndex = 0x80000000;
+                        for (int i = 0; i < length; i += 4) {
+                            in.readRawData(buffer, 4);
+                            for (char & j : buffer) {
+                                memPtr->write(byteIndex, j, 1);
+                                byteIndex++;
+                            }
+                        }
+                    } else {
+                        printf("Data file unable to load, load_data is a no-op\n");
+                        break;
+                    }
+                }
                 break;
             }
             case Pipeline::ECALL::exit: {
