@@ -4,3 +4,4 @@
 !*.c
 !.gitignore
 !*.h
+!*.in
