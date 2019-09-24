@@ -30,7 +30,7 @@ int* quick_sort(int* a, int N) {
     return a;
 }
 
-#define N 300
+#define N 10000
 int data[N];
 
 int main(void) {

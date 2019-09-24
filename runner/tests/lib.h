@@ -28,6 +28,23 @@ static void loaddata(void *addr) {
         : "a0", "a1", "memory");
 }
 
+static void setanswer(void *addr, unsigned int size) {
+    asm volatile(
+        "li a0, 5\n"
+        "mv a1, %0\n"
+        "ecall"
+        :
+        : "r"(addr)
+        : "a0", "a1", "memory");
+    asm volatile(
+        "li a0, 6\n"
+        "mv a1, %0\n"
+        "ecall"
+        :
+        : "r"(size)
+        : "a0", "a1", "memory");
+}
+
 static void putstring(char* arg) {
     asm volatile(
         "li a0, 4\n"

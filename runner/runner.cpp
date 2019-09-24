@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
 
     if (argc != 3 && argc != 4) {
-        printf("Usage: runner [--asm|--elf] file [input_file]\n");
+        fprintf(stderr, "Usage: runner [--asm|--elf] file [input_file]\n");
         return 1;
     }
 
@@ -36,12 +36,12 @@ int main(int argc, char** argv) {
             QByteArray data = file.readAll();
             elf32_ehdr* ehdr = (elf32_ehdr*)data.constData();
             if (ehdr->e_ident[0] != ELF_MAGIC) {
-                printf("No valid ELF magic found\n");
+                fprintf(stderr, "No valid ELF magic found\n");
                 return 1;
             }
 
             if (ehdr->e_machine != EM_RISCV) {
-                printf("Not a rv32 executable\n");
+                fprintf(stderr, "Not a rv32 executable\n");
                 return 1;
             }
 
@@ -54,10 +54,10 @@ int main(int argc, char** argv) {
                     continue;
                 }
                 if (phdr->p_flags & (1 << 0)) {
-                    printf("Code: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
+                    fprintf(stderr, "Code: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
                     parser->loadFromByteArray(QByteArray(src, phdr->p_filesz), false, phdr->p_paddr);
                 } else {
-                    printf("Data: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
+                    fprintf(stderr, "Data: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
                     auto memPtr = Pipeline::getPipeline()->getDataMemoryPtr();
                     for (ptrdiff_t offset = 0; offset < phdr->p_filesz;offset ++) {
                         memPtr->insert({phdr->p_paddr + offset, src[offset]});
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
             file.close();
         }
     } else {
-        printf("Usage: runner [--asm|--elf] file\n");
+        fprintf(stderr, "Usage: runner [--asm|--elf] file\n");
         return 1;
     }
 
@@ -77,6 +77,8 @@ int main(int argc, char** argv) {
     pipeline->disableMemoryAccesses();
     int load_cycles = 0;
     bool first_load = true;
+    uint32_t answer_addr = 0;
+    uint32_t answer_size = 0;
     while (!pipeline->isFinished()) {
         pipeline->step();
         std::vector<uint32_t> &current = *pipeline->getRegPtr();
@@ -112,7 +114,7 @@ int main(int argc, char** argv) {
                 }
 
                 if (argc != 4) {
-                    printf("Data file not specified, load_data is a no-op\n");
+                    fprintf(stderr, "Data file not specified, load_data is a no-op\n");
                     break;
                 } else {
                     QFile file(argv[3]);
@@ -123,7 +125,7 @@ int main(int argc, char** argv) {
                         QDataStream in(&arr, QIODevice::ReadOnly);
                         char buffer[4];
                         uint32_t byteIndex = static_cast<uint32_t>(ecall_val.second);
-                        printf("Load data to %08x\n", byteIndex);
+                        fprintf(stderr, "Load data to %08x\n", byteIndex);
                         for (int i = 0; i < length; i += 4) {
                             in.readRawData(buffer, 4);
                             for (char & j : buffer) {
@@ -132,10 +134,18 @@ int main(int argc, char** argv) {
                             }
                         }
                     } else {
-                        printf("Data file unable to load, load_data is a no-op\n");
+                        fprintf(stderr, "Data file unable to load, load_data is a no-op\n");
                         break;
                     }
                 }
+                break;
+            }
+            case Pipeline::ECALL::set_answer_addr: {
+                answer_addr = static_cast<uint32_t>(ecall_val.second);
+                break;
+            }
+            case Pipeline::ECALL::set_answer_size: {
+                answer_size = static_cast<uint32_t>(ecall_val.second);
                 break;
             }
             case Pipeline::ECALL::exit: {
@@ -144,11 +154,16 @@ int main(int argc, char** argv) {
         }
     }
 
-    printf("\n\nCycle count: %d\n", pipeline->getCycleCount());
-    if (!first_load) {
-        printf("Cycle count after data loaded: %d\n", pipeline->getCycleCount() - load_cycles);
+    auto memPtr = pipeline->getRuntimeMemoryPtr();
+    for (uint32_t i = 0; i < answer_size;i++) {
+        putchar((*memPtr)[answer_addr + i]);
     }
-    printf("Instructions issued: %d\n", pipeline->getInstructionsExecuted());
+
+    fprintf(stderr, "\n\nCycle count: %d\n", pipeline->getCycleCount());
+    if (!first_load) {
+        fprintf(stderr, "Cycle count after data loaded: %d\n", pipeline->getCycleCount() - load_cycles);
+    }
+    fprintf(stderr, "Instructions issued: %d\n", pipeline->getInstructionsExecuted());
 
     return 0;
 }
