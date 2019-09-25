@@ -169,6 +169,7 @@ int main(int argc, char* argv[]) {
 
             case Pipeline::ECALL::set_answer_addr: {
                 answer_addr = static_cast<uint32_t>(ecall_val.second);
+                call_exit = true;
                 break;
             }
 

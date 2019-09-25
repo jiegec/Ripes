@@ -36,6 +36,7 @@ private:
     Pipeline* m_pipelinePtr;
     const Parser* m_parserPtr;
     int m_textSize = 0;  // text segment, in bytes
+    QStringList getState(uint32_t row) const;
 
 signals:
     void textChanged(Stage stage, QString text, QColor col = QColor()) const;

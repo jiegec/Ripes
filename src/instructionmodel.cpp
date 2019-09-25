@@ -16,6 +16,11 @@ void InstructionModel::update() {
     beginResetModel();
     m_textSize = Pipeline::getPipeline()->getTextSize();
     endResetModel();
+    getState(m_pcsptr.IF.pc/4);
+    getState(m_pcsptr.ID.pc/4);
+    getState(m_pcsptr.EX.pc/4);
+    getState(m_pcsptr.MEM.pc/4);
+    getState(m_pcsptr.WB.pc/4);
 }
 
 int InstructionModel::rowCount(const QModelIndex&) const {
@@ -39,6 +44,53 @@ namespace {
     }
 }
 
+QStringList InstructionModel::getState(uint32_t row) const {
+    // check if instruction is in any pipeline stage, and whether the given PC for the pipeline
+    // stage is valid. Furthermore, because of branching, an instruction can be in multiple stages
+    // at once - therefore, we build up a return string by checking all stage program counters
+    QStringList retStrings;
+    uint32_t byteIndex = row * 4;
+    uint32_t maxInstr = m_textSize - 4;
+    if (byteIndex == m_pcsptr.EX.pc && m_pcsptr.EX.initialized && m_pcsptr.EX.isValid()) {
+        emit textChanged(Stage::EX, m_parserPtr->getInstructionString(row * 4));
+        if (byteIndex == maxInstr) {
+            emit textChanged(Stage::ID, "");
+        }
+        retStrings << "EX";
+    }
+    if (byteIndex == m_pcsptr.ID.pc && m_pcsptr.ID.initialized && m_pcsptr.ID.isValid()) {
+        emit textChanged(Stage::ID, m_parserPtr->getInstructionString(row * 4));
+        if (byteIndex == maxInstr) {
+            emit textChanged(Stage::IF, "");
+        }
+        retStrings << "ID";
+    }
+    if (byteIndex == m_pcsptr.IF.pc && m_pcsptr.IF.initialized && m_pcsptr.IF.isValid()) {
+        emit textChanged(Stage::IF, m_parserPtr->getInstructionString(row * 4));
+        emit currentIFRow(row);  // for moving view to IF position
+        retStrings << "IF";
+    }
+    if (byteIndex == m_pcsptr.MEM.pc && m_pcsptr.MEM.initialized && m_pcsptr.MEM.isValid()) {
+        emit textChanged(Stage::MEM, m_parserPtr->getInstructionString(row * 4));
+        if (byteIndex == maxInstr) {
+            emit textChanged(Stage::EX, "");
+        }
+        retStrings << "MEM";
+    }
+    if (byteIndex == m_pcsptr.WB.pc && m_pcsptr.WB.initialized && m_pcsptr.WB.isValid()) {
+        emit textChanged(Stage::WB, m_parserPtr->getInstructionString(row * 4));
+        if (byteIndex == maxInstr) {
+            emit textChanged(Stage::MEM, "");
+        }
+        retStrings << "WB";
+    }
+    VALIDATE(IF);
+    VALIDATE(ID);
+    VALIDATE(EX);
+    VALIDATE(MEM);
+    VALIDATE(WB);
+    return retStrings;
+}
 QVariant InstructionModel::data(const QModelIndex& index, int role) const {
     if (!index.isValid()) {
         return QVariant();
@@ -63,50 +115,7 @@ QVariant InstructionModel::data(const QModelIndex& index, int role) const {
         }
         case 2: {
             if (role == Qt::DisplayRole) {
-                // check if instruction is in any pipeline stage, and whether the given PC for the pipeline
-                // stage is valid. Furthermore, because of branching, an instruction can be in multiple stages
-                // at once - therefore, we build up a return string by checking all stage program counters
-                QStringList retStrings;
-                uint32_t byteIndex = row * 4;
-                uint32_t maxInstr = m_textSize - 4;
-                if (byteIndex == m_pcsptr.EX.pc && m_pcsptr.EX.initialized && m_pcsptr.EX.isValid()) {
-                    emit textChanged(Stage::EX, m_parserPtr->getInstructionString(row * 4));
-                    if (byteIndex == maxInstr) {
-                        emit textChanged(Stage::ID, "");
-                    }
-                    retStrings << "EX";
-                }
-                if (byteIndex == m_pcsptr.ID.pc && m_pcsptr.ID.initialized && m_pcsptr.ID.isValid()) {
-                    emit textChanged(Stage::ID, m_parserPtr->getInstructionString(row * 4));
-                    if (byteIndex == maxInstr) {
-                        emit textChanged(Stage::IF, "");
-                    }
-                    retStrings << "ID";
-                }
-                if (byteIndex == m_pcsptr.IF.pc && m_pcsptr.IF.initialized && m_pcsptr.IF.isValid()) {
-                    emit textChanged(Stage::IF, m_parserPtr->getInstructionString(row * 4));
-                    emit currentIFRow(row);  // for moving view to IF position
-                    retStrings << "IF";
-                }
-                if (byteIndex == m_pcsptr.MEM.pc && m_pcsptr.MEM.initialized && m_pcsptr.MEM.isValid()) {
-                    emit textChanged(Stage::MEM, m_parserPtr->getInstructionString(row * 4));
-                    if (byteIndex == maxInstr) {
-                        emit textChanged(Stage::EX, "");
-                    }
-                    retStrings << "MEM";
-                }
-                if (byteIndex == m_pcsptr.WB.pc && m_pcsptr.WB.initialized && m_pcsptr.WB.isValid()) {
-                    emit textChanged(Stage::WB, m_parserPtr->getInstructionString(row * 4));
-                    if (byteIndex == maxInstr) {
-                        emit textChanged(Stage::MEM, "");
-                    }
-                    retStrings << "WB";
-                }
-                VALIDATE(IF);
-                VALIDATE(ID);
-                VALIDATE(EX);
-                VALIDATE(MEM);
-                VALIDATE(WB);
+                QStringList retStrings = getState(row);
                 if (retStrings.isEmpty()) {
                     // Clear invalid PC values for each stage (used when resetting the program)
                     return QVariant();
