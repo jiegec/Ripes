@@ -16,7 +16,7 @@ public:
     enum MemRead { LB = 1, LH = 2, LW = 3, LBU = 4, LHU = 5 };
     enum MemWrite { SB = 1, SH = 2, SW = 3 };
     enum ECALL { none, print_int = 1, print_char = 2, load_data = 3,
-        print_string = 4, set_answer_addr = 5, set_answer_size = 6, exit = 10 };
+        print_string = 4, set_answer_addr = 5, exit = 10 };
     enum PCSRC { PC4, BR, JALR };
     Pipeline();
     // Utility functions

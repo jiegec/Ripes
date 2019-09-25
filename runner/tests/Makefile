@@ -1,4 +1,4 @@
-PREFIX := riscv64-elf-
+PREFIX := riscv64-linux-gnu-
 MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 
@@ -9,7 +9,7 @@ clean:
 	rm -rf $(patsubst %.c,%,$(wildcard *.c)) $(patsubst %.c,%.o,$(wildcard *.c))
 
 %.o: %.c lib.h
-	$(PREFIX)gcc -c $< -o $@ -march=rv32im -mabi=ilp32 -ffreestanding -nostdlib -O2
+	$(PREFIX)gcc -c $< -o $@ -march=rv32im -mabi=ilp32 -ffreestanding -nostdlib
 
 %: %.o
 	$(PREFIX)ld $^ -T linker.lds -o $@ -melf32lriscv
