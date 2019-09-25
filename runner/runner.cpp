@@ -2,6 +2,7 @@
 #include <QFileInfo>
 #include <QDebug>
 #include <iostream>
+#include <fstream>
 
 #include "assembler.h"
 #include "parser.h"
@@ -9,6 +10,14 @@
 #include "elf.h"
 
 using namespace std;
+
+enum Task {
+    PLUS = 0,
+    MULT,
+    FIB,
+    SORT,
+    FRUIT
+}
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
@@ -67,28 +76,22 @@ int main(int argc, char** argv) {
             file.close();
         }
     } else {
-        fprintf(stderr, "Usage: runner [--asm|--elf] file\n");
+        fprintf(stderr, "Usage: runner [--asm|--elf] file case_num input output\n");
         return 1;
     }
 
     Pipeline* pipeline = Pipeline::getPipeline();
-    std::vector<uint32_t> oldRegs(32, 0);
     pipeline->restart();
     pipeline->disableMemoryAccesses();
     int load_cycles = 0;
-    bool first_load = true;
+    bool data_loaded = false;
+    bool call_exit = false;
     uint32_t answer_addr = 0;
-    uint32_t answer_size = 0;
-    while (!pipeline->isFinished()) {
-        pipeline->step();
-        std::vector<uint32_t> &current = *pipeline->getRegPtr();
 
-        for (int i = 0; i < 32;i++) {
-            if (oldRegs[i] != current[i]) {
-                //printf("regs[%d]: %08x -> %08x\n", i, oldRegs[i], current[i]);
-            }
-        }
-        oldRegs = current;
+    uint32_t prob[100]; // use to store problem-specific data for judging
+
+    while (!pipeline->isFinished() && !call_exit) {
+        pipeline->step();
 
         auto ecall_val = pipeline->checkEcall(true);
 
@@ -108,29 +111,67 @@ int main(int argc, char** argv) {
                 break;
             }
             case Pipeline::ECALL::load_data: {
-                if (first_load) {
-                    load_cycles = pipeline->getCycleCount();
-                    first_load = false;
-                }
 
-                if (argc != 4) {
-                    fprintf(stderr, "Data file not specified, load_data is a no-op\n");
+                if (argc != 6) {
+                    fprintf(stderr, "Wrong argument format, load_data is a no-op\n");
                     break;
                 } else {
-                    QFile file(argv[3]);
-                    if (file.open(QIODevice::ReadOnly)) {
-                        QByteArray arr = file.readAll();
-                        auto memPtr = pipeline->getRuntimeMemoryPtr();
-                        auto length = arr.length();
-                        QDataStream in(&arr, QIODevice::ReadOnly);
-                        char buffer[4];
+                    if (!data_loaded) {
+                        load_cycles = pipeline->getCycleCount();
+                        data_loaded = true;
+                    }
+                    auto task = QString(argv[3]).int();
+                    if (task >= 0 && task <= 4) {
+                        fprintf(stderr, "Running on task %d\n", task);
+                    }
+                    ifstream input(argv[4]);
+                    if (input) {
                         uint32_t byteIndex = static_cast<uint32_t>(ecall_val.second);
                         fprintf(stderr, "Load data to %08x\n", byteIndex);
-                        for (int i = 0; i < length; i += 4) {
-                            in.readRawData(buffer, 4);
-                            for (char & j : buffer) {
-                                memPtr->write(byteIndex, j, 1);
-                                byteIndex++;
+                        
+                        int buf_len = 0;
+
+                        switch (task) {
+                            case PLUS:
+                            case MULT:
+                            case FIB: {
+                                int m, n;
+                                input >> m >> n;
+                                memPtr->write(byteIndex, m, 4);
+                                memPtr->write(byteIndex + 4, n, 4);
+                                break;
+                            }
+                            case SORT: {
+                                int m;
+                                input >> m;
+                                prob[0] = m;
+                                // length
+                                memPtr->write(byteIndex, m, 4);
+                                byteIndex += 4;
+                                // actual data
+                                for (int i = 0; i < m; ++i) {
+                                    int temp;
+                                    input >> temp;
+                                    memPtr->write(byteIndex, temp, 4);
+                                    byteIndex += 4;
+                                }
+                                break;
+                            }
+                            case FRUIT: {
+                                int n;
+                                input >> n;
+                                prob[0] = n;
+                                // length
+                                memPtr->write(byteIndex, n, 4);
+                                byteIndex += 4;
+                                // actual data
+                                for (int i = 0; i < n * 2; ++i) {
+                                    int temp;
+                                    input >> temp;
+                                    memPtr->write(byteIndex, temp, 4);
+                                    byteIndex += 4;
+                                }
+                                break;
                             }
                         }
                     } else {
@@ -144,26 +185,66 @@ int main(int argc, char** argv) {
                 answer_addr = static_cast<uint32_t>(ecall_val.second);
                 break;
             }
-            case Pipeline::ECALL::set_answer_size: {
-                answer_size = static_cast<uint32_t>(ecall_val.second);
-                break;
-            }
+
             case Pipeline::ECALL::exit: {
+                call_exit = true;
                 break;
             }
         }
     }
 
+    int stop_count = pipeline->getCycleCount();
+    int user_count = stop_count - load_cycles;
+
+    fprintf(stderr, "Instructions issued: %d\n", pipeline->getInstructionsExecuted());
+    fprintf("Total cycle count: %d", stop_count);
+    if (data_loaded) {
+        fprintf("Total cycle count after loading data: %dn", user_count);
+    }
+
     auto memPtr = pipeline->getRuntimeMemoryPtr();
+
+    if (argc != 6) {
+        fprintf(stderr, "Wrong argument format, will not generate output.\n");
+        return 0;
+    } else {
+        ofstream out(argv[6]);
+        switch (task) {
+            case PLUS:
+            case MULT:
+            case FIB: {
+                int ans = (int) memPtr->read(memPtr);
+                out << ans << endl;
+                break;
+            }
+
+            case SORT:
+            case FRUIT: {
+                int m = prob[0];
+                for (int i = 0; i < m; ++i) {
+                    int ans = (int) memPtr->read(memPtr);
+                    out << ans << endl;
+                    memPtr += 4;
+                }
+                break;
+            }
+        }
+    }
+
+
+
+
+
+
+
+
     for (uint32_t i = 0; i < answer_size;i++) {
         putchar((*memPtr)[answer_addr + i]);
     }
 
-    fprintf(stderr, "\n\nCycle count: %d\n", pipeline->getCycleCount());
-    if (!first_load) {
-        fprintf(stderr, "Cycle count after data loaded: %d\n", pipeline->getCycleCount() - load_cycles);
-    }
-    fprintf(stderr, "Instructions issued: %d\n", pipeline->getInstructionsExecuted());
+
+
+    
 
     return 0;
 }
