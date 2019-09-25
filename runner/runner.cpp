@@ -5,7 +5,6 @@
 #include <iostream>
 #include <fstream>
 
-#include "assembler.h"
 #include "parser.h"
 #include "pipeline.h"
 #include "elf.h"
@@ -20,7 +19,7 @@ enum Task {
     FRUIT
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
     if (argc != 5) {
@@ -28,13 +27,14 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Assembler assembler;
-    Parser* parser = Parser::getParser();
+    auto parser = Parser::getParser();
+    auto memPtr = Pipeline::getPipeline()->getRuntimeMemoryPtr();
 
 
-    QFile file(argv[1]);
-    if (file.open(QIODevice::ReadOnly)) {
-        QByteArray data = file.readAll();
+    // load ELF file
+    QFile elf(argv[1]);
+    if (elf.open(QIODevice::ReadOnly)) {
+        QByteArray data = elf.readAll();
         elf32_ehdr* ehdr = (elf32_ehdr*)data.constData();
         if (ehdr->e_ident[0] != ELF_MAGIC) {
             fprintf(stderr, "No valid ELF magic found\n");
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
         }
 
         if (ehdr->e_machine != EM_RISCV) {
-            fprintf(stderr, "Not a rv32 executable\n");
+            fprintf(stderr, "Given ELF file is not of RV32 arch\n");
             return 1;
         }
 
@@ -59,29 +59,37 @@ int main(int argc, char** argv) {
                 parser->loadFromByteArray(QByteArray(src, phdr->p_filesz), false, phdr->p_paddr);
             } else {
                 fprintf(stderr, "Data: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
-                auto memPtr = Pipeline::getPipeline()->getDataMemoryPtr();
                 for (ptrdiff_t offset = 0; offset < phdr->p_filesz;offset ++) {
                     memPtr->insert({phdr->p_paddr + offset, src[offset]});
                 }
             }
         }
-        file.close();
+        elf.close();
     }
 
 
-    Pipeline* pipeline = Pipeline::getPipeline();
-    pipeline->restart();
-    pipeline->disableMemoryAccesses();
     int load_cycles = 0;
     bool data_loaded = false;
     bool call_exit = false;
     uint32_t answer_addr = 0;
-    auto memPtr = pipeline->getRuntimeMemoryPtr();
-    auto task = QString(argv[2]).toInt();
-
     uint32_t prob; // use to store problem-specific data for judging
 
-    while (!pipeline->isFinished() && !call_exit) {
+
+    // prepare pipeline
+    pipeline->restart();
+    pipeline->disableMemoryAccesses();
+
+    auto task = QString(argv[2]).toInt();
+    if (task >= 0 && task <= 4) {
+        fprintf(stderr, "Running on task %d\n", task);
+    } else {
+        fprintf(stderr, "Invalid task number %d\n", task);
+        return 1;
+    }
+
+    // run the pipeline for at most MAX_CYCLES
+    const int MAX_CYCLES = 100000000;
+    while (!pipeline->isFinished() && !call_exit && pipeline->getCycleCount() < MAX_CYCLES) {
         pipeline->step();
 
         auto ecall_val = pipeline->checkEcall(true);
@@ -107,9 +115,6 @@ int main(int argc, char** argv) {
                     data_loaded = true;
                 }
 
-                if (task >= 0 && task <= 4) {
-                    fprintf(stderr, "Running on task %d\n", task);
-                }
                 ifstream input(argv[3]);
                 if (input) {
                     uint32_t byteIndex = static_cast<uint32_t>(ecall_val.second);
@@ -174,15 +179,28 @@ int main(int argc, char** argv) {
         }
     }
 
+
+    // check cycles
+    if (pipeline->getCycleCount() == MAX_CYCLES) {
+        // running for too many cycles
+        fprintf(stderr, "Program has run for too many cycles\n")
+    }
+
     int stop_count = pipeline->getCycleCount();
     int user_count = stop_count - load_cycles;
 
     fprintf(stderr, "Instructions issued: %d\n", pipeline->getInstructionsExecuted());
     fprintf(stderr, "Total cycle count: %d\n", stop_count);
+
     if (data_loaded) {
         fprintf(stderr, "Total cycle count after loading data: %d\n", user_count);
+    } else {
+        fprintf(stderr, "Program did not load any data\n");
+        return 1;
     }
 
+
+    // write output file
     ofstream out(argv[4]);
     switch (task) {
         case PLUS:
@@ -204,6 +222,10 @@ int main(int argc, char** argv) {
             break;
         }
     }
+
+
+    // user cycle count is the only thing that will be written to stdout
+    cout << user_count << endl;
 
     return 0;
 }
