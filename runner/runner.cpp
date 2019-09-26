@@ -29,8 +29,6 @@ int main(int argc, char* argv[]) {
 
     auto parser = Parser::getParser();
     Pipeline* pipeline = Pipeline::getPipeline();
-    auto memPtr = pipeline->getRuntimeMemoryPtr();
-
 
     // load ELF file
     QFile elf(argv[1]);
@@ -80,6 +78,7 @@ int main(int argc, char* argv[]) {
     // prepare pipeline
     pipeline->restart();
     pipeline->disableMemoryAccesses();
+    auto memPtr = pipeline->getRuntimeMemoryPtr();
 
     auto task = QString(argv[2]).toInt();
     if (task >= 0 && task <= 4) {
@@ -220,7 +219,7 @@ int main(int argc, char* argv[]) {
             for (int i = 0; i < m; ++i) {
                 int ans = (int) memPtr->read(answer_addr);
                 out << ans << endl;
-                memPtr += 4;
+                answer_addr += 4;
             }
             break;
         }
