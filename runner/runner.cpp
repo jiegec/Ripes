@@ -76,6 +76,7 @@ int main(int argc, char* argv[]) {
 
 
     // prepare pipeline
+    Pipeline* pipeline = Pipeline::getPipeline();
     pipeline->restart();
     pipeline->disableMemoryAccesses();
 
@@ -184,7 +185,7 @@ int main(int argc, char* argv[]) {
     // check cycles
     if (pipeline->getCycleCount() == MAX_CYCLES) {
         // running for too many cycles
-        fprintf(stderr, "Program has run for too many cycles\n")
+        fprintf(stderr, "Program has run for too many cycles\n");
     }
 
     int stop_count = pipeline->getCycleCount();
