@@ -28,7 +28,8 @@ int main(int argc, char* argv[]) {
     }
 
     auto parser = Parser::getParser();
-    auto memPtr = Pipeline::getPipeline()->getRuntimeMemoryPtr();
+    Pipeline* pipeline = Pipeline::getPipeline();
+    auto memPtr = pipeline->getRuntimeMemoryPtr();
 
 
     // load ELF file
@@ -59,8 +60,9 @@ int main(int argc, char* argv[]) {
                 parser->loadFromByteArray(QByteArray(src, phdr->p_filesz), false, phdr->p_paddr);
             } else {
                 fprintf(stderr, "Data: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
+                auto dataMemPtr = pipeline->getDataMemoryPtr();
                 for (ptrdiff_t offset = 0; offset < phdr->p_filesz;offset ++) {
-                    memPtr->insert({phdr->p_paddr + offset, src[offset]});
+                    dataMemPtr->insert({phdr->p_paddr + offset, src[offset]});
                 }
             }
         }
@@ -76,7 +78,6 @@ int main(int argc, char* argv[]) {
 
 
     // prepare pipeline
-    Pipeline* pipeline = Pipeline::getPipeline();
     pipeline->restart();
     pipeline->disableMemoryAccesses();
 
