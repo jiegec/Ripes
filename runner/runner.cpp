@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
                             memPtr->write(byteIndex, n, 4);
                             byteIndex += 4;
                             // actual data
-                            for (int i = 0; i < n * 2; ++i) {
+                            for (int i = 0; i < n * 4; ++i) {
                                 int temp;
                                 input >> temp;
                                 memPtr->write(byteIndex, temp, 4);
@@ -218,11 +218,12 @@ int main(int argc, char* argv[]) {
             int m = prob;
             for (int i = 0; i < m; ++i) {
                 int ans = (int) memPtr->read(answer_addr);
-                out << ans << endl;
+                out << ans << "\n "[i < m-1 && task == FRUIT];
                 answer_addr += 4;
             }
             break;
         }
+
     }
 
 
