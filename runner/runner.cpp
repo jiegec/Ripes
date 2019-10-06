@@ -19,6 +19,13 @@ enum Task {
     FRUIT
 };
 
+
+enum Status {
+    NORMAL = 0,
+    TLE,
+    RE
+};
+
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
@@ -186,6 +193,9 @@ int main(int argc, char* argv[]) {
     if (pipeline->getCycleCount() == MAX_CYCLES) {
         // running for too many cycles
         fprintf(stderr, "Program has run for too many cycles\n");
+	// status code and user cycle count will be written to stdout
+        cout << TLE << " " << 0 << endl;
+	return 0;
     }
 
     int stop_count = pipeline->getCycleCount();
@@ -226,9 +236,8 @@ int main(int argc, char* argv[]) {
 
     }
 
-
-    // user cycle count is the only thing that will be written to stdout
-    cout << user_count << endl;
+    // status code and user cycle count will be written to stdout
+    cout << NORMAL << " " << user_count << endl;
 
     return 0;
 }
