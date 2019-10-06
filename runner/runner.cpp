@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 
     // prepare pipeline
     pipeline->restart();
-    pipeline->disableMemoryAccesses();
+    pipeline->disableRecord();
     auto memPtr = pipeline->getRuntimeMemoryPtr();
 
     auto task = QString(argv[2]).toInt();

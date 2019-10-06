@@ -645,7 +645,7 @@ void Pipeline::propagateCombinational() {
     mux_alures_PC4_MEM.update();
     if ((uint32_t)r_MemRead_EXMEM != 0) {
         // Store read access for use in GUI
-        if (m_EnableMemoruAccesses) {
+        if (m_enableRecord) {
             RVAccess acc{(uint32_t)r_PC_EXMEM, RW::Read, (uint32_t)r_alures_EXMEM, m_cycleCount};
             m_MemoryAccesses.insert(m_MemoryAccesses.begin(), acc);
         }
@@ -815,7 +815,7 @@ int Pipeline::step() {
         // Store write access for use in GUI. Cycle count is current cycle count - 1 since the operation was in the MEM
         // stage in the previous cycle (which we should convey to the user), but the memory gets stored on the rising
         // edge of the clock (this cycle).
-        if (m_EnableMemoruAccesses) {
+        if (m_enableRecord) {
             RVAccess acc{(uint32_t)r_PC_EXMEM, RW::Write, (uint32_t)r_alures_EXMEM, m_cycleCount - 1};
             m_MemoryAccesses.insert(m_MemoryAccesses.begin(), acc);
         }
@@ -848,7 +848,9 @@ int Pipeline::step() {
     setStagePCS();
 
     // Store program counter for the current cycle
-    m_pcsCycles.push_back(m_pcs);
+    if (m_enableRecord) {
+        m_pcsCycles.push_back(m_pcs);
+    }
 
     // Check for finished execution(either end of file or m_finishingCnt > 4 (if ecall 10 has been called)) and
     // breakpoints
@@ -945,7 +947,7 @@ void Pipeline::restart() {
     m_ecallArg = ECALL::none;
     m_ecallVal = 0;
     m_pcsCycles.clear();
-    m_EnableMemoruAccesses = true;
+    m_enableRecord = true;
     m_MemoryAccesses.clear();
 
     // Reset all registers to 0 and propagate signals through combinational logic

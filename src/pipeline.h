@@ -44,7 +44,7 @@ public:
     const std::vector<StagePCS>& getPcsList() { return m_pcsCycles; }
     int getCycleCount() const { return m_cycleCount; }
     int getInstructionsExecuted() const { return m_instructionsExecuted; }
-    void disableMemoryAccesses() {m_EnableMemoruAccesses = false;}
+    void disableRecord() { m_enableRecord = false; }
 
     static Pipeline* getPipeline() {
         static Pipeline pipeline;
@@ -81,8 +81,8 @@ private:
     bool m_finished = false;
     bool m_abort = false;
     int m_finishingCnt = 0;
+    bool m_enableRecord = true;
     std::vector<StagePCS> m_pcsCycles;       // list of PCs for each cycle
-    bool m_EnableMemoruAccesses = true;
     std::vector<RVAccess> m_MemoryAccesses;  // List of all read/write accesses to memory
 
     /** Memory
