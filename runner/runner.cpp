@@ -29,8 +29,8 @@ enum Status {
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
-    if (argc != 5) {
-        fprintf(stderr, "Usage: runner elf_file case_num input output\n");
+    if (argc != 6) {
+        fprintf(stderr, "Usage: runner elf_file case_num input output max_cycle\n");
         return 1;
     }
 
@@ -96,8 +96,9 @@ int main(int argc, char* argv[]) {
     }
 
     // run the pipeline for at most MAX_CYCLES
-    const int MAX_CYCLES = 100000000;
-    while (!pipeline->isFinished() && !call_exit && pipeline->getCycleCount() < MAX_CYCLES) {
+    int max_cycle = 100000000;
+    sscanf(argv[5], "%d", &max_cycle);
+    while (!pipeline->isFinished() && !call_exit && pipeline->getCycleCount() < max_cycle) {
         pipeline->step();
 
         auto ecall_val = pipeline->checkEcall(true);
@@ -190,7 +191,7 @@ int main(int argc, char* argv[]) {
 
 
     // check cycles
-    if (pipeline->getCycleCount() == MAX_CYCLES) {
+    if (pipeline->getCycleCount() == max_cycle) {
         // running for too many cycles
         fprintf(stderr, "Program has run for too many cycles\n");
 	// status code and user cycle count will be written to stdout
