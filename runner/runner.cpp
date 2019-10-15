@@ -33,8 +33,8 @@ enum Status {
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
-    if (argc != 7) {
-        fprintf(stderr, "Usage: runner elf_file case_num input output max_cycle max_memory\n");
+    if (argc != 6 && argc != 7) {
+        fprintf(stderr, "Usage: runner elf_file case_num input output max_cycle\n");
         return 1;
     }
 
@@ -42,9 +42,11 @@ int main(int argc, char* argv[]) {
     Pipeline* pipeline = Pipeline::getPipeline();
 
     // load ELF file
-    int max_memory = 1024 * 1024 * 1024;
+    int max_memory = 64 * 1024 * 1024;
     int used_memory = 0;
-    sscanf(argv[6], "%d", &max_memory);
+    if (argc == 7) {
+        sscanf(argv[6], "%d", &max_memory);
+    }
 
     QFile elf(argv[1]);
     if (elf.open(QIODevice::ReadOnly)) {
