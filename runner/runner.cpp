@@ -21,7 +21,7 @@ enum Task {
 
 // black magic: our prelude procedure takes some cycles,
 // which needs to be reducted from user count
-static const int CYCLE_OFFSET[] = { 34, 34, 34, 29, 41 };
+static const int CYCLE_OFFSET[] = { 35, 35, 35, 30, 42 };
 
 enum Status {
     NORMAL = 0,
