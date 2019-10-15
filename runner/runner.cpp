@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     // run the pipeline for at most MAX_CYCLES
     int max_cycle = 100000000;
     sscanf(argv[5], "%d", &max_cycle);
-    while (!pipeline->isFinished() && !call_exit && pipeline->getCycleCount() < max_cycle) {
+    while (!pipeline->isFinished() && !call_exit && (!data_loaded || pipeline->getCycleCount() - load_cycles < max_cycle)) {
         pipeline->step();
 
         auto ecall_val = pipeline->checkEcall(true);
@@ -191,12 +191,12 @@ int main(int argc, char* argv[]) {
 
 
     // check cycles
-    if (pipeline->getCycleCount() == max_cycle) {
+    if (pipeline->getCycleCount() >= max_cycle + load_cycles) {
         // running for too many cycles
         fprintf(stderr, "Program has run for too many cycles\n");
-	// status code and user cycle count will be written to stdout
+        // status code and user cycle count will be written to stdout
         cout << TLE << " " << 0 << endl;
-	return 0;
+        return 0;
     }
 
     int stop_count = pipeline->getCycleCount();
@@ -214,18 +214,25 @@ int main(int argc, char* argv[]) {
 
 
     // write output file
+    // cycles used by auxiliary procedure is reduced from total count  
     ofstream out(argv[4]);
     switch (task) {
         case PLUS:
-        case MULT:
+        case MULT: {
+            user_count -= 34;
+        }
         case FIB: {
+            user_count -= 34;
             int ans = (int) memPtr->read(answer_addr);
             out << ans << endl;
             break;
         }
 
-        case SORT:
+        case SORT: {
+            user_count -= 29;
+        }
         case FRUIT: {
+            user_count -= 41;
             int m = prob;
             for (int i = 0; i < m; ++i) {
                 int ans = (int) memPtr->read(answer_addr);
@@ -235,6 +242,12 @@ int main(int argc, char* argv[]) {
             break;
         }
 
+    }
+
+    // there must be some strange hack if we get negative user_count
+    if (user_count < 1) {
+        cout << RE << " " << 0 << endl;
+        return 0;
     }
 
     // status code and user cycle count will be written to stdout
