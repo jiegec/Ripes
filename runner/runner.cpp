@@ -19,6 +19,9 @@ enum Task {
     FRUIT
 };
 
+// black magic: our prelude procedure takes some cycles,
+// which needs to be reducted from user count
+static const int CYCLE_OFFSET[] = { 34, 34, 34, 29, 41 };
 
 enum Status {
     NORMAL = 0,
@@ -120,7 +123,7 @@ int main(int argc, char* argv[]) {
             }
             case Pipeline::ECALL::load_data: {
                 if (!data_loaded) {
-                    load_cycles = pipeline->getCycleCount();
+                    load_cycles = pipeline->getCycleCount() + CYCLE_OFFSET[task];
                     data_loaded = true;
                 }
 
@@ -214,25 +217,17 @@ int main(int argc, char* argv[]) {
 
 
     // write output file
-    // cycles used by auxiliary procedure is reduced from total count  
     ofstream out(argv[4]);
     switch (task) {
         case PLUS:
-        case MULT: {
-            user_count -= 34;
-        }
+        case MULT: 
         case FIB: {
-            user_count -= 34;
             int ans = (int) memPtr->read(answer_addr);
             out << ans << endl;
             break;
         }
-
-        case SORT: {
-            user_count -= 29;
-        }
+        case SORT: 
         case FRUIT: {
-            user_count -= 41;
             int m = prob;
             for (int i = 0; i < m; ++i) {
                 int ans = (int) memPtr->read(answer_addr);
@@ -241,7 +236,6 @@ int main(int argc, char* argv[]) {
             }
             break;
         }
-
     }
 
     // there must be some strange hack if we get negative user_count
