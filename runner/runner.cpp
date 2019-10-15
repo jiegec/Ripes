@@ -26,14 +26,15 @@ static const int CYCLE_OFFSET[] = { 34, 34, 34, 29, 41 };
 enum Status {
     NORMAL = 0,
     TLE,
-    RE
+    RE,
+    MLE
 };
 
 int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
 
-    if (argc != 6) {
-        fprintf(stderr, "Usage: runner elf_file case_num input output max_cycle\n");
+    if (argc != 7) {
+        fprintf(stderr, "Usage: runner elf_file case_num input output max_cycle max_memory\n");
         return 1;
     }
 
@@ -41,6 +42,10 @@ int main(int argc, char* argv[]) {
     Pipeline* pipeline = Pipeline::getPipeline();
 
     // load ELF file
+    int max_memory = 1024 * 1024 * 1024;
+    int used_memory = 0;
+    sscanf(argv[6], "%d", &max_memory);
+
     QFile elf(argv[1]);
     if (elf.open(QIODevice::ReadOnly)) {
         QByteArray data = elf.readAll();
@@ -62,6 +67,11 @@ int main(int argc, char* argv[]) {
             if (phdr->p_type != 1) {
                 // PT_LOAD
                 continue;
+            }
+            used_memory += phdr->p_filesz;
+            if (used_memory > max_memory) {
+                cout << MLE << " " << 0 << endl;
+                return 0;
             }
             if (phdr->p_flags & (1 << 0)) {
                 fprintf(stderr, "Code: loaded to %08X of size %x\n", phdr->p_paddr, phdr->p_filesz);
