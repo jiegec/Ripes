@@ -612,6 +612,8 @@ void Pipeline::hazardControlGen() {
 
     // JALR hazard - IFID register is reset for s_jal & r_jal_idex but IDEX needs to be reset aswell for JALR
     if (r_jalr_IDEX) {
+        s_PCWrite = 1;
+        s_IFID_write = 1;
         s_IDEX_reset = 1;
     };
 }
