@@ -585,12 +585,12 @@ void Pipeline::hazardControlGen() {
     // This is BOTH for Branch and Ecall instructions, since these instructions work on operands forwarded
     // to the ID stage
     bool branchEcallHazardFromMem =
-        ((r1 == (uint32_t)r_writeReg_EXMEM) || (r2 == (uint32_t)r_writeReg_EXMEM)) &&
+        (((r1 == (uint32_t)r_writeReg_EXMEM) || (r2 == (uint32_t)r_writeReg_EXMEM)) && (0 != (uint32_t)r_writeReg_EXMEM)) &&
         ((uint32_t)r_regWrite_EXMEM & 0b1) &&
         (((uint32_t)r_instr_IFID & 0b1111111) == 0b1100011 || ((uint32_t)r_instr_IFID & 0b1111111) == 0b1110011);
 
     bool branchEcallHazardFromEx =
-        (r1 == (uint32_t)r_writeReg_IDEX || r2 == (uint32_t)r_writeReg_IDEX) && ((uint32_t)r_regWrite_IDEX & 0b1) &&
+        (r1 == (uint32_t)r_writeReg_IDEX || r2 == (uint32_t)r_writeReg_IDEX) && (0 != (uint32_t)r_writeReg_IDEX) && ((uint32_t)r_regWrite_IDEX & 0b1) &&
         (((uint32_t)r_instr_IFID & 0b1111111) == 0b1100011 || ((uint32_t)r_instr_IFID & 0b1111111) == 0b1110011);
 
     bool branchHazard = branchEcallHazardFromMem || branchEcallHazardFromEx;
